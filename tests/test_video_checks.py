@@ -3,7 +3,7 @@ import pytest
 from video_qa.checks.audio import check_loudness, check_silence_edges
 from video_qa.checks.technical import check_technical
 from video_qa.checks.video import check_black_frames, check_freeze
-from video_qa.ffmpeg_utils import ffprobe
+from video_qa.ffmpeg_utils import duration, ffprobe
 from video_qa.models import FAIL, PASS
 
 
@@ -70,6 +70,25 @@ def test_black_segment_detected(vids, spec):
     r = check_black_frames(vids["black"], spec)
     assert r.status == FAIL
     assert 2.5 <= r.details["segments"][0]["start"] <= 3.5
+
+
+def _allow_end(spec, seconds):
+    return {**spec, "video": {**spec["video"], "allow_black_at_end_s": seconds}}
+
+
+def test_black_at_end_fails_by_default(vids, spec):
+    p = vids["fade_end"]
+    assert check_black_frames(p, spec, duration(ffprobe(p))).status == FAIL
+
+
+def test_black_at_end_tolerated_when_allowed(vids, spec):
+    p = vids["fade_end"]
+    assert check_black_frames(p, _allow_end(spec, 3), duration(ffprobe(p))).status == PASS
+
+
+def test_allowed_end_black_does_not_hide_black_in_the_middle(vids, spec):
+    p = vids["black"]  # černá je uprostřed, ne na konci
+    assert check_black_frames(p, _allow_end(spec, 3), duration(ffprobe(p))).status == FAIL
 
 
 def test_no_black_in_good(vids, spec):

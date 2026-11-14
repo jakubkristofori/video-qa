@@ -7,3 +7,4 @@ reports/
 *.mov
 *.png
 !docs/*.png
+.venv/

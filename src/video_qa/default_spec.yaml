@@ -24,6 +24,7 @@ video:
   black_pixel_threshold: 0.10
   freeze_noise_db: -60
   max_freeze_s: 4.0
+  allow_black_at_end_s: 0     # >0 toleruje stmívání do černé v posledních N s
 thumbnail:
   min_width: 1280
   min_height: 720
@@ -33,3 +34,4 @@ metadata:
   max_description_len: 5000
   max_tags_chars: 500
   require_made_for_kids: true
+  require_tags: true          # false = bez tagů jen projde (Shorts)

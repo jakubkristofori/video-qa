@@ -7,14 +7,22 @@ from ..ffmpeg_utils import ffmpeg_filter_log, find_floats
 from ..models import FAIL, PASS, CheckResult
 
 
-def check_black_frames(path: Path, spec: dict[str, Any]) -> CheckResult:
+def check_black_frames(
+    path: Path, spec: dict[str, Any], total: float | None = None
+) -> CheckResult:
+    """Černé úseky. `allow_black_at_end_s` toleruje stmívání do černé na úplném konci videa
+    (úsek, který začíná v posledních N sekundách a končí s videem); potřebuje celkovou délku."""
     v = spec["video"]
     log = ffmpeg_filter_log(
         path, vf=f"blackdetect=d={v['black_min_duration_s']}:pix_th={v['black_pixel_threshold']}")
     durations = find_floats(r"black_duration:([\d.]+)", log)
     starts = find_floats(r"black_start:([\d.]+)", log)
-    if durations:
-        segs = [{"start": s, "duration": d} for s, d in zip(starts, durations)]
+    segs = [{"start": s, "duration": d} for s, d in zip(starts, durations)]
+    allow = float(v.get("allow_black_at_end_s", 0) or 0)
+    if allow and total:
+        segs = [s for s in segs
+                if not (s["start"] >= total - allow and s["start"] + s["duration"] >= total - 0.3)]
+    if segs:
         return CheckResult("black_frames", FAIL,
                            f"Nalezeno {len(segs)} černých úseků (první v {segs[0]['start']:.1f} s)",
                            {"segments": segs})

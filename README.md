@@ -29,6 +29,13 @@ video-qa episodes/tutu-ep01      # nebo: just qa episodes/tutu-ep01
 Každá epizoda je složka s `config.yaml` (viz `episodes/example/config.yaml`). Prahy mají výchozí
 hodnoty v `src/video_qa/default_spec.yaml` a v configu epizody je lze přepsat.
 
+Volby, které vznikly při nasazení na skutečné epizody:
+
+- `video.allow_black_at_end_s` – toleruje stmívání do černé v posledních N sekundách (úsek musí končit s videem;
+  černá uprostřed videa se dál hlásí).
+- `metadata.require_tags: false` – pro Shorts bez tagů; limit délky tagů platí dál.
+- `video.max_freeze_s` – statická „je řada na tobě“ obrazovka v kvízech trvá i 6 s, takže se ladí po sériích.
+
 ## Strategie testování
 
 - **Unit/integrační testy** (`tests/`) generují přes ffmpeg syntetická videa: jedno dobré a

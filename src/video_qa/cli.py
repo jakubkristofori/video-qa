@@ -14,6 +14,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--report-dir", type=Path, default=Path("reports"))
     args = p.parse_args(argv)
 
+    # Výpis obsahuje ✓/✗ a češtinu; na Windows s cp1250 konzolí by print() spadl na UnicodeEncodeError.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     args.report_dir.mkdir(parents=True, exist_ok=True)
     exit_code = 0
     for ep in args.episodes:

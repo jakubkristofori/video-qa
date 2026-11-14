@@ -12,7 +12,7 @@ from .checks.files import check_required_files, check_thumbnail
 from .checks.metadata import check_metadata
 from .checks.technical import check_technical
 from .checks.video import check_black_frames, check_freeze
-from .ffmpeg_utils import ToolError, ffprobe, first_stream
+from .ffmpeg_utils import ToolError, duration, ffprobe, first_stream
 from .models import FAIL, CheckResult, Report
 
 
@@ -63,7 +63,7 @@ def run_episode(episode_dir: Path) -> Report:
         else:
             add(skip_audio("Video nemá audio stopu"))
         if first_stream(probe, "video"):
-            report.results.append(check_black_frames(video, spec))
+            report.results.append(check_black_frames(video, spec, duration(probe)))
             report.results.append(check_freeze(video, spec))
     except ToolError as e:
         report.results.append(CheckResult("tooling", FAIL, str(e)))
