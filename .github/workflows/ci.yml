@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      episode:
+        description: "Složka epizody ke kontrole (jen pro runner, kde existuje video)"
+        required: false
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install package
+        run: python -m pip install -e ".[dev]"
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Tests (pytest)
+        run: pytest -q --junitxml=reports/pytest-${{ matrix.python }}.xml
+      - name: Summary
+        if: always()
+        run: |
+          echo "### pytest (Python ${{ matrix.python }})" >> "$GITHUB_STEP_SUMMARY"
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import xml.etree.ElementTree as ET, glob
+          for f in glob.glob("reports/pytest-*.xml"):
+              s = ET.parse(f).getroot()
+              s = s if s.tag == "testsuite" else s[0]
+              print(f"- tests: {s.get('tests')}, failures: {s.get('failures')}, errors: {s.get('errors')}")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports-py${{ matrix.python }}
+          path: reports/
+
+  # Jediný stabilní název pro branch protection: matrix job se jmenuje "pytest (3.11)" apod.,
+  # takže požadavek na "test" by jinak nikdy nebyl splněn.
+  test:
+    if: always()
+    needs: pytest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Všechny běhy pytestu musí projít
+        run: |
+          echo "pytest: ${{ needs.pytest.result }}"
+          test "${{ needs.pytest.result }}" = "success"
+
+  episode-qa:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.episode != '' }}
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: python -m pip install -e .
+      - name: Run QA on episode
+        run: video-qa "${{ inputs.episode }}" --report-dir reports
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: episode-qa-reports
+          path: reports/

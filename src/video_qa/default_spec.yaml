@@ -1,0 +1,35 @@
+# Výchozí prahy. Každou epizodu lze přepsat v episodes/<name>/config.yaml (klíč "spec").
+technical:
+  width: 1920
+  height: 1080
+  fps: 30
+  fps_tolerance: 0.5
+  video_codec: h264
+  pix_fmt: yuv420p
+  audio_codec: aac
+  audio_streams: 1
+  sample_rates: [44100, 48000]
+  min_duration_s: 30
+  max_duration_s: 600
+  max_size_mb: 2048
+audio:
+  target_lufs: -14.0
+  lufs_tolerance: 2.0
+  max_true_peak_db: -1.0
+  silence_threshold_db: -50
+  max_leading_silence_s: 1.0
+  max_trailing_silence_s: 2.0
+video:
+  black_min_duration_s: 0.5
+  black_pixel_threshold: 0.10
+  freeze_noise_db: -60
+  max_freeze_s: 4.0
+thumbnail:
+  min_width: 1280
+  min_height: 720
+  max_size_mb: 2
+metadata:
+  max_title_len: 100
+  max_description_len: 5000
+  max_tags_chars: 500
+  require_made_for_kids: true

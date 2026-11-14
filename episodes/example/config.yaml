@@ -1,0 +1,18 @@
+# Konfigurace jedné epizody. Spuštění: video-qa episodes/example
+name: tutu-ep01
+files:
+  video: final.mp4          # cesty jsou relativně ke složce epizody
+  thumbnail: thumbnail.png
+  subtitles: subtitles.srt
+metadata:
+  title: "Tutu and the Rainbow | Nursery Rhyme for Kids"
+  description: "A cheerful nursery rhyme adventure with Tutu."
+  tags: [nursery rhymes, kids songs, tutu]
+  language: en
+  made_for_kids: true
+# Volitelně přepiš výchozí prahy (viz src/video_qa/default_spec.yaml):
+spec:
+  technical:
+    min_duration_s: 20
+  video:
+    max_freeze_s: 5.0       # statické obrazovky v říkankách jsou OK do 5 s
