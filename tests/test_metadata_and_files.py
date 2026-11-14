@@ -40,6 +40,22 @@ def test_tags_too_long(spec):
     assert status(check_metadata(meta, spec))["tags"] == FAIL
 
 
+def test_missing_tags_fail_by_default(spec):
+    meta = {**GOOD_META, "tags": []}
+    assert status(check_metadata(meta, spec))["tags"] == FAIL
+
+
+def test_missing_tags_allowed_for_shorts(spec):
+    relaxed = {**spec, "metadata": {**spec["metadata"], "require_tags": False}}
+    assert status(check_metadata({**GOOD_META, "tags": []}, relaxed))["tags"] == PASS
+
+
+def test_too_long_tags_still_fail_when_tags_optional(spec):
+    relaxed = {**spec, "metadata": {**spec["metadata"], "require_tags": False}}
+    meta = {**GOOD_META, "tags": ["abcdefghij"] * 60}
+    assert status(check_metadata(meta, relaxed))["tags"] == FAIL
+
+
 def test_made_for_kids_must_be_explicit(spec):
     meta = {k: v for k, v in GOOD_META.items() if k != "made_for_kids"}
     assert status(check_metadata(meta, spec))["made_for_kids"] == FAIL
@@ -73,6 +89,15 @@ def test_thumbnail_too_small(tmp_path, spec):
     p = tmp_path / "t.png"
     _png(p, "640x360")
     assert status(check_thumbnail(p, spec))["thumbnail_resolution"] == FAIL
+
+
+def test_thumbnail_failure_message_says_what_is_wrong(tmp_path, spec):
+    # regrese: text chyby se dřív ukládal do `details` a v reportu zůstalo jen "640x360"
+    p = tmp_path / "t.png"
+    _png(p, "640x360")
+    res = {r.name: r for r in check_thumbnail(p, spec)}
+    assert "min 1280x720" in res["thumbnail_resolution"].message
+    assert res["thumbnail_resolution"].details == {"width": 640, "height": 360}
 
 
 def test_thumbnail_missing(tmp_path, spec):

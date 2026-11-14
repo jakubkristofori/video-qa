@@ -78,6 +78,8 @@ def vids(tmp_path_factory):
         "good": make_video(d / "good.mp4", GOOD_V, GOOD_A),
         "black": make_video(d / "black.mp4",
                             [("pattern", 3), ("black", 2), ("pattern", 3)], GOOD_A),
+        "fade_end": make_video(d / "fade_end.mp4",
+                               [("pattern", 6), ("black", 2)], GOOD_A),
         "frozen": make_video(d / "frozen.mp4",
                              [("pattern", 2), ("static", 5), ("pattern", 1)], GOOD_A),
         "loud": make_video(d / "loud.mp4", GOOD_V, [("tone", 8.0, 24.0)]),

@@ -24,7 +24,9 @@ def check_metadata(meta: dict[str, Any] | None, spec: dict[str, Any]) -> list[Ch
     add("description", 0 < len(desc) <= m["max_description_len"],
         f"{len(desc)} znaků", "Popis chybí nebo je příliš dlouhý")
     tag_chars = sum(len(str(t)) for t in tags) + max(len(tags) - 1, 0)
-    add("tags", 0 < tag_chars <= m["max_tags_chars"],
+    # require_tags: false (např. YouTube Shorts) – chybějící tagy projdou, limit délky platí vždy
+    missing_ok = not m.get("require_tags", True) and not tags
+    add("tags", missing_ok or 0 < tag_chars <= m["max_tags_chars"],
         f"{len(tags)} tagů, {tag_chars} znaků",
         f"Tagy chybí nebo přesahují {m['max_tags_chars']} znaků ({tag_chars})")
     add("language", bool(meta.get("language")), str(meta.get("language")), "Chybí 'language'", WARN)
