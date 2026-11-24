@@ -1,0 +1,46 @@
+# GitLab CI – obdoba .github/workflows/ci.yml
+# Výsledky testů se zobrazí v Pipeline -> záložka "Tests" a v merge requestu.
+
+stages: [test, qa]
+
+pytest:
+  stage: test
+  image: python:${PY}
+  parallel:
+    matrix:
+      - PY: ["3.11", "3.13"]
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key: pip-${PY}
+    paths: [.cache/pip]
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends ffmpeg
+    - python -m pip install -e ".[dev]"
+  script:
+    - ruff check .
+    - pytest -q --junitxml=reports/pytest-${PY}.xml
+  artifacts:
+    when: always
+    paths: [reports/]
+    reports:
+      junit: reports/pytest-*.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+# Ruční kontrola epizody: Build -> Pipelines -> Run pipeline, proměnná EPISODE=episodes/<slozka>
+episode-qa:
+  stage: qa
+  image: python:3.13
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends ffmpeg
+    - python -m pip install -e .
+  script:
+    - video-qa "$EPISODE" --report-dir reports
+  artifacts:
+    when: always
+    paths: [reports/]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web" && $EPISODE
