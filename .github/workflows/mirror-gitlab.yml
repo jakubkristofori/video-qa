@@ -1,0 +1,36 @@
+name: Mirror to GitLab
+
+# Každý push na GitHub (větev nebo tag) se zkopíruje na GitLab,
+# kde se pak spustí GitLab CI (.gitlab-ci.yml).
+on:
+  push:
+    branches: ["**"]
+    tags: ["**"]
+  workflow_dispatch:
+
+concurrency:
+  group: mirror-gitlab
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # celá historie, jinak GitLab push odmítne
+
+      - name: Push to GitLab
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GITLAB_REPO: gitlab.com/jakubkristofori-group/video-qa.git
+        run: |
+          if [ -z "$GITLAB_TOKEN" ]; then
+            echo "::error::Chybí secret GITLAB_TOKEN (Settings -> Secrets and variables -> Actions)"
+            exit 1
+          fi
+          git remote add gitlab "https://oauth2:${GITLAB_TOKEN}@${GITLAB_REPO}"
+          # --force: přepsané feature větve se zrcadlí; chráněná main na GitLabu
+          # přepsání historie stejně odmítne, takže tam projde jen fast-forward.
+          git push --force gitlab "${GITHUB_SHA}:${GITHUB_REF}"
+          echo "### Zrcadleno na GitLab: \`${GITHUB_REF}\` @ \`${GITHUB_SHA::7}\`" >> "$GITHUB_STEP_SUMMARY"
