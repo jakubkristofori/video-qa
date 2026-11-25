@@ -37,8 +37,10 @@ def find_jobs() -> list[Path]:
 
 
 def episode_name(job: Path) -> str:
-    """Same naming as qa_gate.build_config: <episode>, <episode>_short, <episode>_short1 ..."""
-    return job.parent.parent.name + job.stem.removeprefix("publish")
+    """Report folder name, taken from qa_gate itself so the two repos never disagree."""
+    sys.path.insert(0, str(GATE.parent))
+    import qa_gate  # lives in the rainbow-rhymes repo, only present on the video PC
+    return qa_gate.report_name(job)
 
 
 def video_mtime(job: Path) -> float | None:
