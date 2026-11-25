@@ -45,6 +45,12 @@ Volby, které vznikly při nasazení na skutečné epizody:
 - **CI** (`.github/workflows/ci.yml`): ruff + pytest na Pythonu 3.11 a 3.13, uložení reportů jako
   artefaktů a shrnutí v GitHub Actions. Ruční spuštění (`workflow_dispatch`) umí zkontrolovat konkrétní epizodu.
 - **Quality gate**: v nastavení repa zapni branch protection a požaduj úspěšný job `test`.
+- **GitLab** (`.gitlab-ci.yml`): GitHub Action `mirror-gitlab.yml` zrcadlí každý push na GitLab, kde běží stejné testy
+  s JUnit reporty v záložce *Tests*.
+- **QA skutečných epizod** (job `episode-qa`, `ci/weekly_qa.py`): běží na **self-hosted GitLab Runneru** přímo na PC
+  s videi (tag `video-pc`, jen chráněné větve). Videa PC neopouští – na GitLab jdou jen JUnit a HTML reporty
+  s odstraněnými lokálními cestami. Plán každý pátek 8:00 kontroluje videa změněná za posledních 7 dní,
+  ručně jde spustit jedna epizoda (`EPISODE=<složka>`) nebo všechno (`QA_DAYS=0`).
 
 ## Struktura
 

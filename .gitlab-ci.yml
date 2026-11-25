@@ -26,21 +26,31 @@ pytest:
     reports:
       junit: reports/pytest-*.xml
   rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $EPISODE || $QA_DAYS   # QA epizod netestuje kód
+      when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "web"
 
-# Ruční kontrola epizody: Build -> Pipelines -> Run pipeline, proměnná EPISODE=episodes/<slozka>
+# QA skutečných epizod na self-hosted runneru u videí (tag video-pc). Videa PC neopustí,
+# na GitLab jdou jen JUnit + HTML reporty bez lokálních cest (ci/weekly_qa.py).
+# - plán: Build -> Pipeline schedules, pátek 8:00 Europe/Prague, větev main -> videa za posledních QA_DAYS dní
+# - ručně: Build -> Pipelines -> Run pipeline, EPISODE=<složka epizody, např. d23_kalendar> (nebo QA_DAYS=0 = vše)
 episode-qa:
   stage: qa
-  image: python:3.13
-  before_script:
-    - apt-get update && apt-get install -y --no-install-recommends ffmpeg
-    - python -m pip install -e .
+  tags: [video-pc]
+  variables:
+    GIT_DEPTH: "1"                                  # QA_DAYS se nenastavuje: skript bere výchozích 7 dní
   script:
-    - video-qa "$EPISODE" --report-dir reports
+    - '& "E:\video-qa\.venv\Scripts\python.exe" -I ci/weekly_qa.py --out reports'
   artifacts:
     when: always
+    expire_in: 30 days
     paths: [reports/]
+    reports:
+      junit: reports/*.xml
   rules:
-    - if: $CI_PIPELINE_SOURCE == "web" && $EPISODE
+    - if: $CI_COMMIT_REF_PROTECTED != "true"        # runner s přístupem k datům jen pro chráněné větve
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web" && ($EPISODE || $QA_DAYS)
